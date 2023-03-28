@@ -59,7 +59,8 @@ EleProbeVariablesToStore = cms.PSet(
     el_5x5_e5x5      = cms.string("full5x5_showerShape().e5x5"),
     el_5x5_r9        = cms.string("full5x5_showerShape().r9"),
     el_5x5_sieie     = cms.string("full5x5_showerShape().sigmaIetaIeta"),    
-    el_5x5_sieip     = cms.string("full5x5_showerShape().sigmaIetaIphi"),    
+    el_5x5_sieip     = cms.string("full5x5_showerShape().sigmaIetaIphi"),  
+    el_5x5_sipip     = cms.string("full5x5_showerShape().sigmaIphiIphi"),    
     el_e1x5          = cms.string("showerShape().e1x5"),
     el_e2x5          = cms.string("showerShape().e2x5Max"),
     el_e5x5          = cms.string("showerShape().e5x5"),
@@ -75,7 +76,6 @@ EleProbeVariablesToStore = cms.PSet(
     el_1overEminus1overP        = cms.string("abs(1-eSuperClusterOverP())/ecalEnergy()"),
 
     # mva id
-
     el_nonTrigMVA80X = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16GeneralPurposeV1Values"),
     el_hzzMVA80X     = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Spring16HZZV1Values"),
     el_noIsoMVA94X     = cms.InputTag("electronMVAValueMapProducer:ElectronMVAEstimatorRun2Fall17NoIsoV1Values"),
@@ -125,7 +125,12 @@ EleProbeVariablesToStore = cms.PSet(
     el_convVtxFitProb  = cms.InputTag("eleVarHelper:convVtxFitProb"),
 
     el_hasMatchedConversion = cms.InputTag("eleVarHelper:hasMatchedConversion"),
-
+    el_pterr            = cms.InputTag("eleVarHelper:pterr"),
+    el_ntks             = cms.InputTag("eleVarHelper:ntks"),
+    el_tksdr            = cms.InputTag("eleVarHelper:tksdr"),
+    el_tksPtRatio       = cms.InputTag("eleVarHelper:tksPtRatio"),
+    el_tksRelPtRatio    = cms.InputTag("eleVarHelper:tksRelPtRatio"),
+    
     # Track cluster matching
     el_ep             = cms.string("eSuperClusterOverP()"),
     el_eelepout       = cms.string("eEleClusterOverPout()"),

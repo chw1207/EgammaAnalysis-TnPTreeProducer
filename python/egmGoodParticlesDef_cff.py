@@ -70,6 +70,8 @@ def setGoodParticlesMiniAOD(process, options):
                                           beamSpot         = cms.InputTag("offlineBeamSpot"),
                                           conversions      = cms.InputTag("reducedEgamma:reducedConversions"),
                                           pfCandidates     = cms.InputTag("packedPFCandidates"),
+                                          gsfTracks        = cms.InputTag("reducedEgamma:reducedGsfTracks")
+                                        #   electrons        = cms.InputTag("slimmedElectrons"),
                                           )
 
     ####################  Electron collection
