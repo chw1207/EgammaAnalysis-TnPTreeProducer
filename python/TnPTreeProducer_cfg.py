@@ -29,10 +29,11 @@ registerOption('includeSUSY', False,    'Add also the variables used by SUSY')
 
 registerOption('HLTname',     'HLT',    'HLT process name (default HLT)', optionType=VarParsing.varType.string) # HLTname was HLT2 in now outdated reHLT samples
 registerOption('GT',          'auto',   'Global Tag to be used', optionType=VarParsing.varType.string)
-registerOption('era',         '2018',   'Data-taking era: 2016, 2017, 2018, UL2017 or UL2018', optionType=VarParsing.varType.string)
+registerOption('era',         '2018',   'Data-taking era: 2016, 2017, 2018, UL2017, UL2018 or UL2016preVFP, UL2016postVFP', optionType=VarParsing.varType.string)
 registerOption('logLevel',    'INFO',   'Loglevel: could be DEBUG, INFO, WARNING, ERROR', optionType=VarParsing.varType.string)
+registerOption('DiphoLeg',    'SUBLEAD','which leg of dipho hlt, LEAD, SUBLEAD', optionType=VarParsing.varType.string)
 
-registerOption('L1Threshold',  0,       'Threshold for L1 matched objects', optionType=VarParsing.varType.int)
+registerOption('L1Threshold',  0.3,     'Threshold for L1 matched objects', optionType=VarParsing.varType.int)
 
 varOptions.parseArguments()
 
@@ -62,30 +63,6 @@ if varOptions.doRECO:      log.info('Producing RECO SF tree')
 ###################################################################
 ## Define TnP inputs
 ###################################################################
-
-# sub leading
-# HggPreSel = " && ".join([
-#   "abs(superCluster.eta) < 2.5",
-#   "pt > 20 && hadronicOverEm < 0.08",
-#   "full5x5_r9 > 0.5 && abs(superCluster.eta) < 1.4442) || (full5x5_r9 > 0.8 && abs(superCluster.eta) > 1.566)",
-#   "(abs(superCluster.eta) < 1.4442) && (full5x5_r9 > 0.85 || (full5x5_sigmaIetaIeta < 0.0105 && pfPhoIso03 < 4.0 && trkSumPtHollowConeDR03 < 6.0)))"
-#   "(abs(superCluster.eta) > 1.566) && (full5x5_r9 > 0.9 || (full5x5_sigmaIetaIeta < 0.028 && pfPhoIso03 < 6.0 && trkSumPtHollowConeDR03 < 6.0)))"
-# ])
-# (abs(leadingPhoton.superCluster.eta) < 2.5 && 
-
-# isEB = "abs(superCluster.eta) < 1.4442"
-# isEE = "(abs(superCluster.eta) > 1.566 && abs(superCluster.eta) < 2.5)"
-# isEBHR9 = f"({isEB} && full5x5_r9 >  0.85)"
-# isEBLR9 = f"({isEB} && full5x5_r9 <= 0.85)"
-# isEEHR9 = f"({isEE} && full5x5_r9 >  0.90)"
-# isEBHR9 = f"({isEE} && full5x5_r9 <= 0.90)"
-# cms.string(
-#   "(full5x5_r9>0.8 || chargedHadronIso < 20 || chargedHadronIso/et < 0.3)"
-#   " && hadronicOverEm < 0.08"
-#   " && et > 20"
-#   " && {isEB} || {isEE}"
-# ),
-
 options = dict()
 options['useAOD']               = varOptions.isAOD
 options['use80X']               = varOptions.is80X
@@ -114,6 +91,7 @@ options['UseCalibEn']           = varOptions.calibEn
 options['addSUSY']              = varOptions.includeSUSY and not options['useAOD']
 
 options['OUTPUT_FILE_NAME']     = "TnPTree_%s.root" % ("mc" if options['isMC'] else "data")
+options['isLEAD']               = True if varOptions.DiphoLeg == "LEAD" else False
 
 #################################################
 # Settings for global tag
@@ -145,21 +123,44 @@ if '2016' in options['era']:
   options['TnPPATHS']           = cms.vstring("HLT_Ele27_eta2p1_WPTight_Gsf_v*")
   options['TnPHLTTagFilters']   = cms.vstring("hltEle27erWPTightGsfTrackIsoFilter")
   options['TnPHLTProbeFilters'] = cms.vstring()
-  options['HLTFILTERSTOMEASURE']= {"passHltEle27WPTightGsf" :                           cms.vstring("hltEle27WPTightGsfTrackIsoFilter"),
+  
+  if options['isLEAD']:
+    options['TagLeadMatchFilters'] = cms.vstring()
+    options['HLTFILTERSTOMEASURE']= {"passHltEle27WPTightGsf" :                           cms.vstring("hltEle27WPTightGsfTrackIsoFilter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEG33CaloIdLMWPMS2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
+                                    "passHltDiphoton3018SeededLastFilter":               cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
+                                      }
+  else:
+    options['TagLeadMatchFilters'] = cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
+    options['HLTFILTERSTOMEASURE']= {"passHltEle27WPTightGsf" :                           cms.vstring("hltEle27WPTightGsfTrackIsoFilter"),
                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
                                    "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEG33CaloIdLMWPMS2Filter"),
                                    "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
+                                   "passHltDiphoton3018UnseededLastFilter":             cms.vstring("hltEG18Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter", "hltEG18R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter")
                                    
                                      }
   # Some examples, you can add multiple filters (or OR's of filters, note the vstring) here, each of them will be added to the tuple
 elif '2017' in options['era']:
-  
   options['TnPPATHS']            = cms.vstring("HLT_Ele32_WPTight_Gsf_L1DoubleEG_v*")
   options['TnPHLTTagFilters']    = cms.vstring("hltEle32L1DoubleEGWPTightGsfTrackIsoFilter","hltEGL1SingleEGOrFilter")
   options['TnPHLTProbeFilters']  = cms.vstring()
-  options['TagLeadMatchFilters'] = cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
-  options['HLTFILTERSTOMEASURE'] = {"passHltEle32DoubleEGWPTightGsf" :                   cms.vstring("hltEle32L1DoubleEGWPTightGsfTrackIsoFilter"),
+  if options['isLEAD']:
+    options['TagLeadMatchFilters'] = cms.vstring()
+    options['HLTFILTERSTOMEASURE'] = {"passHltEle32DoubleEGWPTightGsf" :                   cms.vstring("hltEle32L1DoubleEGWPTightGsfTrackIsoFilter"),
+                                    "passEGL1SingleEGOr" :                               cms.vstring("hltEGL1SingleEGOrFilter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEle33CaloIdLMWPMS2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
+                                    "passHltDiphoton3022SeededLastFilter":             cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
+                                    }
+  else:
+    options['TagLeadMatchFilters'] = cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
+    options['HLTFILTERSTOMEASURE'] = {"passHltEle32DoubleEGWPTightGsf" :                   cms.vstring("hltEle32L1DoubleEGWPTightGsfTrackIsoFilter"),
                                    "passEGL1SingleEGOr" :                               cms.vstring("hltEGL1SingleEGOrFilter"),
                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
@@ -172,14 +173,23 @@ elif '2018'  in options['era']:
   options['TnPPATHS']           = cms.vstring("HLT_Ele32_WPTight_Gsf_v*")
   options['TnPHLTTagFilters']   = cms.vstring("hltEle32WPTightGsfTrackIsoFilter")
   options['TnPHLTProbeFilters'] = cms.vstring()
-  options['TagLeadMatchFilters'] = cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
-  options['HLTFILTERSTOMEASURE']= {"passHltEle32WPTightGsf" :                           cms.vstring("hltEle32WPTightGsfTrackIsoFilter"),
-                                   "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
-                                   "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
-                                   "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEle33CaloIdLMWPMS2Filter"),
-                                   "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
-                                   "passHltDiphoton3022UnseededLastFilter":             cms.vstring("hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter", "hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter")
-                                  }
+  if options['isLEAD']:
+    options['TagLeadMatchFilters'] = cms.vstring()
+    options['HLTFILTERSTOMEASURE']= {"passHltEle32WPTightGsf" :                           cms.vstring("hltEle32WPTightGsfTrackIsoFilter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEle33CaloIdLMWPMS2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
+                                    "passHltDiphoton3022SeededLastFilter":             cms.vstring("hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter", "hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter")
+                                    }
+  else:
+    options['HLTFILTERSTOMEASURE']= {"passHltEle32WPTightGsf" :                           cms.vstring("hltEle32WPTightGsfTrackIsoFilter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg1L1match" : cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg1Filter"),
+                                    "passHltEle23Ele12CaloIdLTrackIdLIsoVLLeg2" :        cms.vstring("hltEle23Ele12CaloIdLTrackIdLIsoVLTrackIsoLeg2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWSeedLegL1match" :        cms.vstring("hltEle33CaloIdLMWPMS2Filter"),
+                                    "passHltDoubleEle33CaloIdLMWUnsLeg" :                cms.vstring("hltDiEle33CaloIdLMWPMS2UnseededFilter"),
+                                    "passHltDiphoton3022UnseededLastFilter":             cms.vstring("hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter", "hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter")
+                                    }
 
 # Apply L1 matching (using L1Threshold) when flag contains "L1match" in name
 options['ApplyL1Matching']      = any(['L1match' in flag for flag in options['HLTFILTERSTOMEASURE'].keys()])
@@ -248,17 +258,20 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 process.source = cms.Source("PoolSource", fileNames = options['INPUT_FILE_NAME'])
 process.maxEvents = cms.untracked.PSet( input = options['MAXEVENTS'])
 
-if options['era'] == '2016':          options['EGMPOSTCORR'] = '2016-Legacy'
-if options['era'] == '2017':          options['EGMPOSTCORR'] = '2017-Nov17ReReco'
-if options['era'] == '2018':          options['EGMPOSTCORR'] = '2018-Prompt'
-if options['era'] == 'UL2016preVFP':  options['EGMPOSTCORR'] = '2016preVFP-UL'
-if options['era'] == 'UL2016postVFP': options['EGMPOSTCORR'] = '2016postVFP-UL' 
-if options['era'] == 'UL2017':        options['EGMPOSTCORR'] = '2017-UL'
-if options['era'] == 'UL2018':        options['EGMPOSTCORR'] = '2018-UL'
-setupEgammaPostRecoSeq(process,
-                       runVID=False,
-                       runEnergyCorrections=True,
-                       era=options['EGMPOSTCORR'])
+if not options['useAOD']:
+  from EgammaAnalysis.TnPTreeProducer.mergedMva_cff import mergedMvaSequence
+  if options['era'] == '2016':          options['EGMPOSTCORR'] = '2016-Legacy'
+  if options['era'] == '2017':          options['EGMPOSTCORR'] = '2017-Nov17ReReco'
+  if options['era'] == '2018':          options['EGMPOSTCORR'] = '2018-Prompt'
+  if options['era'] == 'UL2016preVFP':  options['EGMPOSTCORR'] = '2016preVFP-UL'
+  if options['era'] == 'UL2016postVFP': options['EGMPOSTCORR'] = '2016postVFP-UL' 
+  if options['era'] == 'UL2017':        options['EGMPOSTCORR'] = '2017-UL'
+  if options['era'] == 'UL2018':        options['EGMPOSTCORR'] = '2018-UL'
+  setupEgammaPostRecoSeq(process,
+                        runVID=False,
+                        runEnergyCorrections=True,
+                        era=options['EGMPOSTCORR'])
+  process.init_sequence += mergedMvaSequence(process, options, tnpVars)
 
 ###################################################################
 ## Define sequences and TnP pairs

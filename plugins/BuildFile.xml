@@ -16,5 +16,6 @@
   <use   name="DataFormats/EgammaCandidates"/>
   <use   name="RecoEgamma/EgammaTools"/>
   <use   name="RecoEgamma/ElectronIdentification"/>
+  <!-- <use   name="xgboost"/> -->
 <flags EDM_PLUGIN="1"/>
 </library>

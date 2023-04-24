@@ -70,6 +70,7 @@ EleProbeVariablesToStore = cms.PSet(
     el_5x5_circularity = cms.InputTag("eleVarHelper:5x5circularity"),
     el_5x5_hoe       = cms.string("full5x5_hcalOverEcal()"),
 
+    el_gghoe         = cms.string("hcalOverEcal()"),
     el_hoe           = cms.string("hadronicOverEm()"),    
     el_hoe_bc           = cms.string("hcalOverEcalBc"),
     el_eoverp_wES        = cms.string("(superCluster().rawEnergy+superCluster().preshowerEnergy)/gsfTrack().pMode()"),
@@ -125,11 +126,6 @@ EleProbeVariablesToStore = cms.PSet(
     el_convVtxFitProb  = cms.InputTag("eleVarHelper:convVtxFitProb"),
 
     el_hasMatchedConversion = cms.InputTag("eleVarHelper:hasMatchedConversion"),
-    el_pterr            = cms.InputTag("eleVarHelper:pterr"),
-    el_ntks             = cms.InputTag("eleVarHelper:ntks"),
-    el_tksdr            = cms.InputTag("eleVarHelper:tksdr"),
-    el_tksPtRatio       = cms.InputTag("eleVarHelper:tksPtRatio"),
-    el_tksRelPtRatio    = cms.InputTag("eleVarHelper:tksRelPtRatio"),
     
     # Track cluster matching
     el_ep             = cms.string("eSuperClusterOverP()"),

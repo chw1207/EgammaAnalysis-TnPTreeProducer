@@ -35,6 +35,8 @@
 #include "TMath.h"
 #include "TLorentzVector.h"
 
+// #include "XGBoostCMSSW/XGBoostInterface/interface/XGBReader.h"
+
 //Since this is supposed to run both with CMSSW_10_2_X and CMSSW_10_6_X
 //but some of the methods changed and are not compatible, we use this check
 //on the compiler version to establish whether we are in a 102X or 106X release.
@@ -97,6 +99,8 @@ ElectronVariableHelper<T>::ElectronVariableHelper(const edm::ParameterSet & iCon
   produces<edm::ValueMap<float>>("pterr");
   
   isMiniAODformat = true;
+
+  // auto xgbID = std::make_shared<XGBReader>("/afs/cern.ch/user/c/chenghan/CMSSW_10_6_13/src/Models/Output_Merged2GsfID_hyperTune_FullRun2ULWPPtWeiFinal_EB/XGB/XGB_modelXGB.txt");
 }
 
 template<class T>
@@ -154,14 +158,7 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
   std::vector<float> gsfhVals;
 
   std::vector<float> hasMatchedConversionVals;
-  std::vector<float> pterrVals;
-  std::vector<float> ntksVals;
-  std::vector<float> tksdrVals;
-  std::vector<float> tksPtRatioVals;
-  std::vector<float> tksRelPtRatioVals;
 
-  std::vector<int> main_tk_Idx;
-  int nEle = 0;
   typename std::vector<T>::const_iterator probe, endprobes = probes->end();
   for (probe = probes->begin(); probe != endprobes; ++probe) {
 
@@ -170,11 +167,6 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
 
     dzVals.push_back(probe->gsfTrack()->dz(vtx->position()));
     dxyVals.push_back(probe->gsfTrack()->dxy(vtx->position()));
-
-    // pterr
-    // std::cout << probe_clone.userFloat("ecalTrkEnergyErrPostCorr") << std::endl;
-    // std::cout << probe->userFloat("ecalTrkEnergyErrPostCorr") << std::endl;
-    pterrVals.push_back(probe_clone.userFloat("ecalTrkEnergyErrPostCorr")*probe_clone.pt()/probe_clone.p());
 
     // SIP
     float IP      = fabs(probe_clone.dB(pat::Electron::PV3D));
@@ -268,110 +260,7 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
     }
 
     ioemiopVals.push_back(ele_IoEmIop);
-
-    nEle++;
   }
-  
-  std::vector<int> isMainGSF;
-  for (auto ig = gsfTracks->begin(); ig != gsfTracks->end(); ++ig){
-    int ismain = 0;
-    for (auto probe = probes->begin(); probe != probes->end(); ++probe){
-      float main_tk_eta = probe->gsfTrack()->eta();
-      float main_tk_phi = probe->gsfTrack()->phi();
-      float tk_eta = ig->eta();
-      float tk_phi = ig->phi();
-      if ((tk_eta == main_tk_eta) && (tk_phi == main_tk_phi) ){
-        ismain = 1;
-        break;
-      }
-    }
-    isMainGSF.push_back(ismain);
-  }
-
-  std::vector<int> mainGsfIdx;
-  for (size_t i = 0; i < isMainGSF.size(); i++){
-    if (isMainGSF[i] != 0)
-      mainGsfIdx.push_back(i);
-  }
-
-  // if (nEle != (int)mainGsfIdx.size()){
-  //   std::cout << "Number of Gsf tracks = " << isMainGSF.size() << std::endl;
-  //   std::cout << "nEle = " << nEle << std::endl;
-  //   std::cout << "nmaintrk = " << mainGsfIdx.size()  << std::endl;
-  // }
-    
-  
-  std::vector<float> tkdRVals;
-  for (auto probe = probes->begin(); probe != probes->end(); ++probe){
-    // std::cout << "Number of Gsf tracks = " << isMainGSF.size() << std::endl;
-    std::pair<int, int> results(-1, -1);
-    for (size_t j = 0; j < mainGsfIdx.size(); j++){
-      auto gsfTrack = gsfTracks->ptrAt(mainGsfIdx[j]);
-      float main_tk_eta = probe->gsfTrack()->eta();
-      float main_tk_phi = probe->gsfTrack()->phi();
-      float tk_eta = gsfTrack->eta();
-      float tk_phi = gsfTrack->phi();
-      if ((tk_eta == main_tk_eta) && (tk_phi == main_tk_phi)){
-        results.first = j;
-        results.second = mainGsfIdx[j]; // gsf track index number 
-      }
-    }
-
-    std::vector<int> associatedGsf; // the indecies of gsf tracks associated with the electron.
-    if (results.second == mainGsfIdx.back()){ // the last main gsf track in this event
-      for (size_t k = results.second; k < isMainGSF.size(); k++){
-          associatedGsf.push_back(k);
-      }
-    }
-    else{
-      for (int k = results.second; k < mainGsfIdx[results.first+1]; k++){
-          associatedGsf.push_back(k);
-      }
-    }
-    
-    int nAssTrks = associatedGsf.size();
-    ntksVals.push_back(nAssTrks);
-    
-    auto main_tk = gsfTracks->ptrAt(associatedGsf[0]);
-    TLorentzVector main_tk_v;
-    main_tk_v.SetPtEtaPhiM(main_tk->pt(), main_tk->eta(), main_tk->phi(), 0.000511); // assum it is electron 
-    if (nAssTrks > 1){
-      // find the cloest tk to main tk to be the sub tk
-      float tmp_dr = 999.;
-      int el_subtk_idx = -1;
-      for (size_t iat = 1; iat < associatedGsf.size(); iat++){ // 0 is main tk
-        auto tmp_sub_tk = gsfTracks->ptrAt(associatedGsf[iat]);
-        float dr = deltaR(main_tk->eta(), main_tk->phi(), tmp_sub_tk->eta(), tmp_sub_tk->phi());
-        if (dr < tmp_dr){
-          tmp_dr = dr;
-          el_subtk_idx = associatedGsf[iat];
-        }
-      }
-
-      auto sub_tk = gsfTracks->ptrAt(el_subtk_idx);
-      TLorentzVector sub_tk_v;
-      sub_tk_v.SetPtEtaPhiM(sub_tk->pt(), sub_tk->eta(), sub_tk->phi(), 0.000511); // assume it is electron 
-      
-      tksdrVals.push_back(deltaR(main_tk->eta(), main_tk->phi(), sub_tk->eta(), sub_tk->phi()));
-      tksPtRatioVals.push_back(sub_tk->pt()/main_tk->pt());
-      tksRelPtRatioVals.push_back((sub_tk_v+main_tk_v).Pt()/probe->superCluster()->rawEnergy());
-    }
-    else{
-      tksdrVals.push_back(-999.);
-      tksPtRatioVals.push_back(-999.);
-      tksRelPtRatioVals.push_back(main_tk->pt()/probe->superCluster()->rawEnergy());
-    }
-    // if (associatedGsf.size() < 1){
-    //   std::cout << "gsf track index = " << results.second << std::endl;
-    //   std::cout << "gsf pt = " << gsfTracks->ptrAt(results.second)->pt() << std::endl;
-    // }
-
-    // auto testtk = probe->ambiguousGsfTracks_();
-  }
-
-  // for (auto iEle = electrons->begin(); iEle != electrons->end(); ++iEle){
-  //   std::cout << iEle->userFloat("miniIsoAll") << std::endl;
-  // } 
   
 
   // convert into ValueMap and store
@@ -391,11 +280,6 @@ void ElectronVariableHelper<T>::produce(edm::Event & iEvent, const edm::EventSet
   writeValueMap(iEvent, probes, ioemiopVals, "ioemiop");
   writeValueMap(iEvent, probes, ocVals, "5x5circularity");
   writeValueMap(iEvent, probes, hasMatchedConversionVals, "hasMatchedConversion");
-  writeValueMap(iEvent, probes, ntksVals, "ntks");
-  writeValueMap(iEvent, probes, tksdrVals, "tksdr");
-  writeValueMap(iEvent, probes, tksPtRatioVals, "tksPtRatio");
-  writeValueMap(iEvent, probes, tksRelPtRatioVals, "tksRelPtRatio");
-  writeValueMap(iEvent, probes, pterrVals, "pterr");
 
   // PF lepton isolations (will only work in miniAOD)
   if(isMiniAODformat){
