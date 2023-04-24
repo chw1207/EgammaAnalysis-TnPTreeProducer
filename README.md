@@ -6,7 +6,7 @@ Package of the EGamma group to produce Tag-and-Probe trees
 The official TnPTreeProducer is modified to make Tnp Ntuples for measuring the DiPhoton30_22(18) trigger scale facters used for HToEleEleGamma analysis. The main changes are as follows.
 
 - `plugins/MergedElectronMvaProducer.cc`: To add the variables needed for merged electron ID.
-- `python/egmTreesSetup_cff.py`: additional process are add to require tag electron match to seed filters of DiPhoton30_22 HLT for unseed leg Ntuples. (`process.tagEleLeadMatch`)
+- `python/egmTreesSetup_cff.py`: additional process are add to require tag electron match to seeded filters of DiPhoton30_22 HLT for unseeded leg Ntuples. (`process.tagEleLeadMatch`)
 
 The filters for DiPhoton30_22 HLT
 - Seeded leg 
@@ -22,7 +22,7 @@ The way to add filters is referred to `flashgg`:
    - https://github.com/cms-analysis/flashgg/blob/dev_legacy_runII/Validation/test/makeHltTreePhotons.py
    - https://github.com/cms-analysis/flashgg/blob/dev_legacy_runII/Validation/python/treeMakerOptionsHLT_cfi.py
 
-Bacause the variables needed for merged electron ID contains the variable which reuires EGamma post processing after reconstruction, the `EgammaPostRecoTools` need to be set up. To setup the TnPTreeProducer used for HToEleEleGamma analysis, please use the following commands.
+Because the variables needed for merged electron ID contain the variable (`ecalTrkEnergyErrPostCorr`) which requires EGamma post-processing after reconstruction, the `EgammaPostRecoTools` need to be set up. To setup the TnPTreeProducer used for HToEleEleGamma analysis, please use the following commands.
 ```bash
 # install the TnPTreeProducer
 cmsrel CMSSW_10_6_13
