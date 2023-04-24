@@ -3,7 +3,6 @@
 Package of the EGamma group to produce Tag-and-Probe trees
 
 ## :fire: Dedicated changes to HToEleEleGamma analysis
----
 The official TnPTreeProducer is modified to make Tnp Ntuples for measuring the DiPhoton30_22(18) trigger scale facters used for HToEleEleGamma analysis. The main changes are as follows.
 
 - `plugins/MergedElectronMvaProducer.cc`: To add the variables needed for merged electron ID.
@@ -47,7 +46,6 @@ To submit the crab jods, please executes
 source /cvmfs/cms.cern.ch/common/crab-setup.sh
 python MyTnpCrabSubmit.py
 ```
----
 ## Overview of branches
 
 | Branch                                     | release            | tnpEleIDs          | tnpPhoIDs          | tnpEleTrig         | tnpEleReco         | purpose                                |
