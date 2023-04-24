@@ -2,6 +2,52 @@
 
 Package of the EGamma group to produce Tag-and-Probe trees
 
+## :fire: Dedicated changes to HToEleEleGamma analysis
+---
+The official TnPTreeProducer is modified to make Tnp Ntuples for measuring the DiPhoton30_22(18) trigger scale facters used for HToEleEleGamma analysis. The main changes are as follows.
+
+- `plugins/MergedElectronMvaProducer.cc`: To add the variables needed for merged electron ID.
+- `python/egmTreesSetup_cff.py`: additional process are add to require tag electron match to seed filters of DiPhoton30_22 HLT for unseed leg Ntuples. (`process.tagEleLeadMatch`)
+
+The filters for DiPhoton30_22 HLT
+- Seeded leg 
+    - hltEG30LIso60CaloId15b35eHE12R9Id50b80eEcalIsoLastFilter
+    - hltEG30LR9Id85b90eHE12R9Id50b80eR9IdLastFilter
+- Unseeded leg
+    - hltEG22R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter (2017 and 2018)
+    - hltEG22Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter (2017 and 2018)
+    - hltEG18R9Id85b90eHE12R9Id50b80eR9UnseededLastFilter (2016)
+    - hltEG18Iso60CaloId15b35eHE12R9Id50b80eTrackIsoUnseededLastFilter (2016)
+
+The way to add filters is referred to `flashgg`:
+   - https://github.com/cms-analysis/flashgg/blob/dev_legacy_runII/Validation/test/makeHltTreePhotons.py
+   - https://github.com/cms-analysis/flashgg/blob/dev_legacy_runII/Validation/python/treeMakerOptionsHLT_cfi.py
+
+Bacause the variables needed for merged electron ID contains the variable which reuires EGamma post processing after reconstruction, the `EgammaPostRecoTools` need to be set up. To setup the TnPTreeProducer used for HToEleEleGamma analysis, please use the following commands.
+```bash
+# install the TnPTreeProducer
+cmsrel CMSSW_10_6_13
+cd CMSSW_10_6_13/src
+cmsenv
+git clone -b RunIIfinal https://github.com/chw1207/EgammaAnalysis-TnPTreeProducer.git EgammaAnalysis/TnPTreeProducer
+
+# install the EgammaPostRecoTools
+git cms-addpkg RecoEgamma/EgammaTools
+git clone https://github.com/cms-egamma/EgammaPostRecoTools.git
+mv EgammaPostRecoTools/python/EgammaPostRecoTools.py RecoEgamma/EgammaTools/python/.
+git clone -b ULSSfiles_correctScaleSysMC https://github.com/jainshilpi/EgammaAnalysis-ElectronTools.git EgammaAnalysis/ElectronTools/data/
+git cms-addpkg EgammaAnalysis/ElectronTools
+
+# compile
+scram b -j8
+```
+
+To submit the crab jods, please executes
+```bash
+source /cvmfs/cms.cern.ch/common/crab-setup.sh
+python MyTnpCrabSubmit.py
+```
+---
 ## Overview of branches
 
 | Branch                                     | release            | tnpEleIDs          | tnpPhoIDs          | tnpEleTrig         | tnpEleReco         | purpose                                |
@@ -14,7 +60,6 @@ Package of the EGamma group to produce Tag-and-Probe trees
 Note: because of a dataformat CMSSW\_10\_6 can only be used for ultra-legacy samples, and CMSSW\_10\_2 should be used for the rereco samples.
 
 ## Available tuples
-
 ### ReReco 2016, 2017 and 2018
 If you do not need changes to the default code, you can simply use existing flat tag and probe trees, avalaible for both 2016, 2017 and 2018 (RunIIfinal branch):
 
